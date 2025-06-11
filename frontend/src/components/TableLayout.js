@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from "react";
+
 import { BiSearch } from "react-icons/bi";
 import AddContainer from "./tabs/AddContainer";
 import Location from "./tabs/Location";
@@ -36,6 +37,7 @@ const TableLayout = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchText, setSearchText] = useState("");
   const [tableOpen, setTableOpen] = useState({
+    addSearch: false,
     addContainer: false,
     location: false,
     requestChemical: false,
@@ -44,6 +46,7 @@ const TableLayout = () => {
 
   const handleClose = () => {
     setTableOpen({
+      addSearch: false,
       addContainer: false,
       location: false,
       requestChemical: false,
@@ -112,7 +115,7 @@ const TableLayout = () => {
             className="w-full h-full bg-primary-100 rounded-lg p-4 hover:scale-105 transition-all duration-300"
             onClick={() => handleOpen("requestChemical")}
           >
-            Request chemical
+            Requested chemicals
           </div>
           {tableOpen.requestChemical && <Request onClose={handleClose} />}
           <div
