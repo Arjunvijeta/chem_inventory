@@ -17,6 +17,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     department = Column(String)
+    contact_person = Column(Boolean, default=False)
     role = Column(String)
     created_at = Column(DateTime, server_default=func.now())
     edited_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -26,12 +27,19 @@ class User(Base):
     # chemicals = relationship("Chemical_catalogue", back_populates="created_by_user")
     # orders = relationship("Order", back_populates="contact_user")
 
+class Department(Base):
+    __tablename__ = "departments"
+    id = Column(Integer, primary_key=True, index=True)
+    department_name = Column(String, index=True)
+    created_at = Column(DateTime, server_default=func.now())
+
 class Location(Base):
     __tablename__ = "locations"
     id = Column(Integer, primary_key=True, index=True)
     location_building = Column(String, index=True)
     location_room = Column(String, index=True)
-    location_self = Column(String, index=True)
+    location_storage = Column(String, index=True)
+    location_note = Column(String, nullable=True)
     created_by = Column(Integer, ForeignKey("users.id"))
     edited_by = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, server_default=func.now())
@@ -51,9 +59,10 @@ class Chemical_catalogue(Base):
     quantity = Column(Float)
     unit = Column(String)
     supplier = Column(String)
+    department = Column(String)
     location_building = Column(String, index=True)
     location_room = Column(String, index=True)
-    location_self = Column(String, index=True)
+    location_storage = Column(String, index=True)
     purchase_date = Column(Date)
     expiry_date = Column(Date)
     comment = Column(String, nullable=True)
@@ -77,8 +86,8 @@ class Order(Base):
     id = Column(Integer, primary_key=True, index=True)
     chemical_id = Column(Integer, ForeignKey("chemical_catalogues.id"))
     chemical_name = Column(String)
-    contact = Column(Integer, ForeignKey("users.id"))
-    handler = Column(Integer, ForeignKey("users.id"))
+    requested_by = Column(String)
+    requested_to = Column(String)
     comment = Column(String, nullable=True)
     status = Column(String, default="pending")
     created_at = Column(DateTime, server_default=func.now())
@@ -88,13 +97,3 @@ class Order(Base):
     # chemical = relationship("Chemical_catalogue")
     # contact_user = relationship("User", foreign_keys=[contact], back_populates="orders")
     # handler_user = relationship("User", foreign_keys=[handler])
-
-
-    __tablename__ = 'commodities'
-    
-    commodity_id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(150), unique=True, nullable=False)
-    description = Column(String(255), nullable=True)
-    active = Column(Boolean, default=True)
-    created_at = Column(DateTime, server_default=func.now())
-    edited_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

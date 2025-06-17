@@ -1,48 +1,71 @@
 import React, { useState, useMemo, useEffect } from "react";
+import { IoInformationCircleOutline } from "react-icons/io5";
+import { GrCart } from "react-icons/gr";
 
 import { BiSearch } from "react-icons/bi";
 import AddContainer from "./tabs/AddContainer";
 import Location from "./tabs/Location";
 import Request from "./tabs/Request";
 import Administrator from "./tabs/Administrator";
+import Cart from "./actions/Cart";
+import Information from "./actions/Information";
+import { chemicalCatalogueAPI } from "../services/api";
 
 const columns = [
-  { id: "chemicalName", label: "Chemical Name" },
+  { id: "chemical_name", label: "Chemical Name" },
   { id: "quantity", label: "Quantity" },
-  { id: "location", label: "Location" },
-  { id: "CAS", label: "CAS" },
+  { id: "location_building", label: "Location" },
+  { id: "cas", label: "CAS" },
   { id: "barcode", label: "Barcode" },
-];
-
-const rows = [
-  {
-    chemicalName: "Acetone",
-    quantity: 5,
-    location: "Lab 1",
-    CAS: "67-64-1",
-    barcode: "12345",
-  },
-  {
-    chemicalName: "Ethanol",
-    quantity: 10,
-    location: "Lab 2",
-    CAS: "64-17-5",
-    barcode: "67890",
-  },
-  // ...more rows
+  { id: "action", label: "Action" },
 ];
 
 const TableLayout = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchText, setSearchText] = useState("");
+  const [chemicals, setChemicals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [tableOpen, setTableOpen] = useState({
     addSearch: false,
     addContainer: false,
     location: false,
     requestChemical: false,
     administrator: false,
+    information: false,
+    cart: false,
   });
+
+  // Fetch chemicals from API
+  useEffect(() => {
+    const fetchChemicals = async () => {
+      try {
+        setLoading(true);
+        const data = await chemicalCatalogueAPI.getAll();
+        setChemicals(data);
+        setError(null);
+        console.log(data[0]);
+      } catch (err) {
+        console.error("Error fetching chemicals:", err);
+        setError("Failed to load chemicals");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChemicals();
+  }, []);
+
+  // Refresh chemicals after adding new one
+  const refreshChemicals = async () => {
+    try {
+      const data = await chemicalCatalogueAPI.getAll();
+      setChemicals(data);
+    } catch (err) {
+      console.error("Error refreshing chemicals:", err);
+    }
+  };
 
   const handleClose = () => {
     setTableOpen({
@@ -51,6 +74,8 @@ const TableLayout = () => {
       location: false,
       requestChemical: false,
       administrator: false,
+      information: false,
+      cart: false,
     });
     console.log(tableOpen);
   };
@@ -61,16 +86,16 @@ const TableLayout = () => {
 
   // Filter rows based on search text
   const filteredRows = useMemo(() => {
-    if (!searchText) return rows;
+    if (!searchText) return chemicals;
     const searchLower = searchText.toLowerCase();
-    return rows.filter((row) => {
+    return chemicals.filter((chemical) => {
       return columns.some((column) => {
-        const value = row[column.id];
+        const value = chemical[column.id];
         if (value == null) return false;
         return String(value).toLowerCase().includes(searchLower);
       });
     });
-  }, [rows, searchText, columns]);
+  }, [chemicals, searchText, columns]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
@@ -93,8 +118,60 @@ const TableLayout = () => {
     setPage(0);
   };
 
+  if (loading) {
+    return (
+      <div className="flex space-x-10 px-10 mt-10">
+        <div className="w-[20vw] rounded-lg py-10">
+          <div className="flex flex-col space-y-2 text-white items-center font-semibold justify-center">
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Add chemical container
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Location
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Requested chemicals
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Administrator
+            </div>
+          </div>
+        </div>
+        <div className="w-[80vw] h-full rounded-lg p-4 flex items-center justify-center">
+          <div className="text-xl text-gray-600">Loading chemicals...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex space-x-10 px-10 mt-10">
+        <div className="w-[20vw] rounded-lg py-10">
+          <div className="flex flex-col space-y-2 text-white items-center font-semibold justify-center">
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Add chemical container
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Location
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Requested chemicals
+            </div>
+            <div className="w-full h-full bg-primary-100 rounded-lg p-4">
+              Administrator
+            </div>
+          </div>
+        </div>
+        <div className="w-[80vw] h-full rounded-lg p-4 flex items-center justify-center">
+          <div className="text-xl text-red-600">{error}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex space-x-10 px-10 mt-10">
+    <div className="flex space-x-10 px-10 mt-8">
       <div className="w-[20vw] rounded-lg py-10">
         <div className="flex flex-col space-y-2 text-white items-center font-semibold justify-center">
           <div
@@ -103,7 +180,9 @@ const TableLayout = () => {
           >
             Add chemical container
           </div>
-          {tableOpen.addContainer && <AddContainer onClose={handleClose} />}
+          {tableOpen.addContainer && (
+            <AddContainer onClose={handleClose} onSuccess={refreshChemicals} />
+          )}
           <div
             className="w-full h-full bg-primary-100 rounded-lg p-4 hover:scale-105 transition-all duration-300"
             onClick={() => handleOpen("location")}
@@ -127,7 +206,7 @@ const TableLayout = () => {
           {tableOpen.administrator && <Administrator onClose={handleClose} />}
         </div>
       </div>
-      <div className="w-[80vw] h-[70vh] rounded-lg p-4">
+      <div className="w-[80vw] h-full rounded-lg p-4">
         <div className="px-4 w-full mx-auto">
           <div className="flex flex-col rounded-xl ">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 py-6 px-2">
@@ -148,7 +227,7 @@ const TableLayout = () => {
               </div>
             </div>
             <div className="border-0 overflow-hidden bg-white rounded-xl shadow">
-              <div className="md:h-[50vh] overflow-auto">
+              <div className="md:h-[54vh] overflow-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-primary-700 sticky top-0 z-10">
                     <tr>
@@ -159,10 +238,6 @@ const TableLayout = () => {
                         <th
                           key={column.id}
                           className="px-4 py-3 text-left text-sm font-bold text-primary-100"
-                          style={{
-                            minWidth: column.minWidth,
-                            maxWidth: column.maxWidth,
-                          }}
                         >
                           {column.label}
                         </th>
@@ -180,6 +255,33 @@ const TableLayout = () => {
                         </td>
                         {columns.map((column) => {
                           const value = row[column.id];
+                          if (column.id === "action") {
+                            return (
+                              <td
+                                key={column.id}
+                                className="pl-4 py-2 flex items-center gap-2 text-sm"
+                              >
+                                <IoInformationCircleOutline
+                                  className="text-primary-100 hover:scale-110 transition-all duration-300 cursor-pointer"
+                                  onClick={() => handleOpen("information")}
+                                />
+                                {tableOpen.information && (
+                                  <Information
+                                    chemical={row}
+                                    onClose={handleClose}
+                                  />
+                                )}
+                                <GrCart
+                                  className="text-primary-100 hover:scale-110 transition-all duration-300 cursor-pointer"
+                                  onClick={() => handleOpen("cart")}
+                                />
+                                {tableOpen.cart && (
+                                  <Cart chemical={row} onClose={handleClose} />
+                                )}
+                              </td>
+                            );
+                          }
+
                           return (
                             <td
                               key={column.id}

@@ -1,24 +1,36 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import background from "../images/background.jpg";
-
-const logindata = {
-  email: "test@test.com",
-  password: "123456",
-};
+import { authAPI } from "../services/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form submitted", email, password);
-    if (email === logindata.email && password === logindata.password) {
-      setIsLoggedIn(true);
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await authAPI.login({
+        username: email, // FastAPI OAuth2 expects 'username' field
+        password: password,
+      });
+
+      // Store the access token
+      localStorage.setItem("token", response.access_token);
+
+      // Navigate to main page
       navigate("/");
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.message || "Login failed. Please check your credentials.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -34,6 +46,13 @@ const Login = () => {
             <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900 md:text-2xl dark:text-white">
               Sign in to your account
             </h1>
+
+            {error && (
+              <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                {error}
+              </div>
+            )}
+
             <form
               className="space-y-4 md:space-y-6"
               action="#"
@@ -41,7 +60,7 @@ const Login = () => {
             >
               <div>
                 <label
-                  for="email"
+                  htmlFor="email"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Your email
@@ -54,12 +73,13 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                   placeholder="name@company.com"
-                  required=""
+                  required
+                  disabled={loading}
                 />
               </div>
               <div>
                 <label
-                  for="password"
+                  htmlFor="password"
                   className="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                 >
                   Password
@@ -72,7 +92,8 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  required=""
+                  required
+                  disabled={loading}
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -83,12 +104,11 @@ const Login = () => {
                       aria-describedby="remember"
                       type="checkbox"
                       className="w-4 h-4 border border-gray-300 rounded bg-gray-50 focus:ring-3 focus:ring-primary-300 dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-primary-600 dark:ring-offset-gray-800"
-                      required=""
                     />
                   </div>
                   <div className="ml-3 text-sm">
                     <label
-                      for="remember"
+                      htmlFor="remember"
                       className="text-gray-500 dark:text-gray-300"
                     >
                       Remember me
@@ -102,11 +122,15 @@ const Login = () => {
                   Forgot password?
                 </a>
               </div>
-              <button className="button-style bg-black text-white px-4 py-2.5 rounded-lg w-full hover:scale-105 transition-all duration-300">
-                Sign in
+              <button
+                type="submit"
+                disabled={loading}
+                className="button-style bg-black text-white px-4 py-2.5 rounded-lg w-full hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? "Signing in..." : "Sign in"}
               </button>
               <p className="text-sm font-light text-gray-500 dark:text-gray-400">
-                Don’t have an account yet?{" "}
+                Don't have an account yet?{" "}
                 <a
                   href="#"
                   className="font-medium text-primary-600 hover:underline dark:text-primary-500"

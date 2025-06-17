@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
+import { orderAPI } from "../../services/api";
 
 const columns = [
   { id: "chemicalName", label: "Chemical name" },
@@ -9,110 +10,45 @@ const columns = [
   { id: "status", label: "Status" },
 ];
 
-const rows = [
-  {
-    chemicalName: "Acetone",
-    contact: "user1@example.com",
-    creation_date: "2023-01-01",
-    comment: "Urgent",
-    status: "Pending",
-  },
-  {
-    chemicalName: "Ethanol",
-    contact: "user2@example.com",
-    creation_date: "2023-01-02",
-    comment: "Regular",
-    status: "Approved",
-  },
-  {
-    chemicalName: "Methanol",
-    contact: "user3@example.com",
-    creation_date: "2023-01-03",
-    comment: "Urgent",
-    status: "Rejected",
-  },
-  {
-    chemicalName: "Benzene",
-    contact: "user4@example.com",
-    creation_date: "2023-01-04",
-    comment: "Regular",
-    status: "Pending",
-  },
-  {
-    chemicalName: "Toluene",
-    contact: "user5@example.com",
-    creation_date: "2023-01-05",
-    comment: "Urgent",
-    status: "Approved",
-  },
-  {
-    chemicalName: "Xylene",
-    contact: "user6@example.com",
-    creation_date: "2023-01-06",
-    comment: "Regular",
-    status: "Rejected",
-  },
-  {
-    chemicalName: "Acetone",
-    contact: "user7@example.com",
-    creation_date: "2023-01-07",
-    comment: "Urgent",
-    status: "Pending",
-  },
-  {
-    chemicalName: "Ethanol",
-    contact: "user8@example.com",
-    creation_date: "2023-01-08",
-    comment: "Regular",
-    status: "Approved",
-  },
-  {
-    chemicalName: "Methanol",
-    contact: "user9@example.com",
-    creation_date: "2023-01-09",
-    comment: "Urgent",
-    status: "Rejected",
-  },
-  {
-    chemicalName: "Benzene",
-    contact: "user10@example.com",
-    creation_date: "2023-01-10",
-    comment: "Regular",
-    status: "Pending",
-  },
-  {
-    chemicalName: "Toluene",
-    contact: "user11@example.com",
-    creation_date: "2023-01-11",
-    comment: "Urgent",
-    status: "Approved",
-  },
-  {
-    chemicalName: "Xylene",
-    contact: "user12@example.com",
-    creation_date: "2023-01-12",
-    comment: "Regular",
-    status: "Rejected",
-  },
-];
-
 const Request = ({ onClose }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchText, setSearchText] = useState("");
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch orders from API
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true);
+        const data = await orderAPI.getAll();
+        setOrders(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching orders:", err);
+        setError("Failed to load orders");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, []);
 
   // Filter rows based on search text
   const filteredRows = useMemo(() => {
-    if (!searchText) return rows;
+    if (!searchText) return orders;
     const searchLower = searchText.toLowerCase();
-    return rows.filter((row) => {
+    return orders.filter((order) => {
       return columns.some((column) => {
-        const value = row[column.id];
+        const value = order[column.id];
         if (value == null) return false;
         return String(value).toLowerCase().includes(searchLower);
       });
     });
-  }, [searchText]);
+  }, [orders, searchText]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
@@ -135,6 +71,28 @@ const Request = ({ onClose }) => {
     setPage(0);
   };
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="relative bg-white rounded-lg shadow-lg p-6 w-full md:w-[70vw] overflow-auto h-[80vh] flex flex-col items-center">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-2xl font-bold text-gray-600 hover:text-black focus:outline-none"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-gray-800 w-full">
+            Requested chemicals
+          </h2>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-xl text-gray-600">Loading orders...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="relative bg-white rounded-lg shadow-lg p-6 w-full md:w-[70vw] overflow-auto h-[80vh] flex flex-col items-center">
@@ -148,6 +106,13 @@ const Request = ({ onClose }) => {
         <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-gray-800 w-full">
           Requested chemicals
         </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded w-full">
+            {error}
+          </div>
+        )}
+
         <div className="w-full flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2 px-2">
           <div className="relative flex items-center w-full md:w-auto">
             <div className="absolute left-3">
@@ -180,9 +145,9 @@ const Request = ({ onClose }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedRows.map((row, index) => (
+              {paginatedRows.map((order, index) => (
                 <tr
-                  key={index}
+                  key={order.id || index}
                   className={
                     index % 2 === 0
                       ? "hover:bg-zinc-200 transition-all duration-300"
@@ -197,48 +162,45 @@ const Request = ({ onClose }) => {
                       key={column.id}
                       className="pl-4 py-2 whitespace-nowrap text-sm text-gray-700"
                     >
-                      {row[column.id]}
+                      {order[column.id] || "-"}
                     </td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          {/* Pagination Controls */}
-          <div className="flex items-end justify-end px-4 py-2 bg-white border-t border-gray-200 w-full">
-            <div className="flex items-center gap-2">
-              <span className="md:text-sm text-xs text-gray-700">
-                Rows per page:
-              </span>
-              <select
-                className="border border-gray-300 text-gray-600 rounded px-2 py-1 md:text-sm text-xs focus:outline-none"
-                value={rowsPerPage}
-                onChange={handleChangeRowsPerPage}
-              >
-                {[5, 10, 25].map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="px-2 py-1 md:text-sm text-xs text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                onClick={() => handleChangePage(page - 1)}
-                disabled={page === 0}
-              >
-                Previous
-              </button>
-              <span className="md:text-sm text-xs text-gray-700">
-                Page {page + 1} of {totalPages}
-              </span>
-              <button
-                className="px-2 py-1 md:text-sm text-xs  text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                onClick={() => handleChangePage(page + 1)}
-                disabled={page >= totalPages - 1}
-              >
-                Next
-              </button>
-            </div>
+        </div>
+        <div className="flex items-center justify-between w-full mt-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-700">Rows per page:</span>
+            <select
+              value={rowsPerPage}
+              onChange={handleChangeRowsPerPage}
+              className="border border-gray-300 rounded px-2 py-1 text-sm"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleChangePage(page - 1)}
+              disabled={page === 0}
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              onClick={() => handleChangePage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

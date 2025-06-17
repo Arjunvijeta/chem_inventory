@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { BiSearch } from "react-icons/bi";
+import { locationAPI } from "../../services/api";
 
 const columns = [
   { id: "building", label: "Building" },
@@ -7,55 +8,97 @@ const columns = [
   { id: "shelf", label: "Shelf" },
 ];
 
-const rows = [
-  { building: "Main", room: "101", shelf: "A" },
-  { building: "East", room: "202", shelf: "B" },
-  { building: "West", room: "303", shelf: "C" },
-  { building: "North", room: "404", shelf: "D" },
-  { building: "South", room: "505", shelf: "E" },
-  { building: "Annex", room: "606", shelf: "F" },
-  { building: "Lab", room: "707", shelf: "G" },
-  { building: "Storage", room: "808", shelf: "H" },
-  { building: "Main", room: "109", shelf: "I" },
-  { building: "East", room: "210", shelf: "J" },
-  { building: "West", room: "311", shelf: "K" },
-  { building: "North", room: "412", shelf: "L" },
-  { building: "South", room: "513", shelf: "M" },
-];
-
 const Location = ({ onClose }) => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [searchText, setSearchText] = useState("");
+  const [locations, setLocations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [tableOpen, setTableOpen] = useState({
     addLocation: false,
   });
+  const [newLocation, setNewLocation] = useState({
+    building: "",
+    room: "",
+    shelf: "",
+  });
+  const [saving, setSaving] = useState(false);
+
+  // Fetch locations from API
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoading(true);
+        const data = await locationAPI.getAll();
+        setLocations(data);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching locations:", err);
+        setError("Failed to load locations");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, []);
+
+  // Refresh locations after adding new one
+  const refreshLocations = async () => {
+    try {
+      const data = await locationAPI.getAll();
+      setLocations(data);
+    } catch (err) {
+      console.error("Error refreshing locations:", err);
+    }
+  };
 
   const handleClose = () => {
     setTableOpen({ addLocation: false });
+    setNewLocation({ building: "", room: "", shelf: "" });
   };
 
   const handleOpen = (tab) => {
     setTableOpen({ ...tableOpen, [tab]: true });
   };
 
-  const handleSave = () => {
-    console.log("Saving location");
-    handleClose();
+  const handleSave = async () => {
+    if (!newLocation.building || !newLocation.room || !newLocation.shelf) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await locationAPI.create(newLocation);
+      setNewLocation({ building: "", room: "", shelf: "" });
+      handleClose();
+      refreshLocations();
+    } catch (err) {
+      console.error("Error creating location:", err);
+      alert("Failed to create location: " + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleNewLocationChange = (e) => {
+    setNewLocation({ ...newLocation, [e.target.name]: e.target.value });
   };
 
   // Filter rows based on search text
   const filteredRows = useMemo(() => {
-    if (!searchText) return rows;
+    if (!searchText) return locations;
     const searchLower = searchText.toLowerCase();
-    return rows.filter((row) => {
+    return locations.filter((location) => {
       return columns.some((column) => {
-        const value = row[column.id];
+        const value = location[column.id];
         if (value == null) return false;
         return String(value).toLowerCase().includes(searchLower);
       });
     });
-  }, [searchText]);
+  }, [locations, searchText]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
@@ -78,6 +121,28 @@ const Location = ({ onClose }) => {
     setPage(0);
   };
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <div className="relative bg-white rounded-lg shadow-lg p-6 w-full md:w-[70vw] overflow-auto h-[80vh] flex flex-col items-center">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-2xl font-bold text-gray-600 hover:text-black focus:outline-none"
+            aria-label="Close"
+          >
+            ×
+          </button>
+          <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-gray-800 w-full">
+            Location
+          </h2>
+          <div className="flex items-center justify-center h-full">
+            <div className="text-xl text-gray-600">Loading locations...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="relative bg-white rounded-lg shadow-lg p-6 w-full md:w-[70vw] overflow-auto h-[80vh] flex flex-col items-center">
@@ -91,6 +156,13 @@ const Location = ({ onClose }) => {
         <h2 className="text-2xl md:text-3xl font-bold mb-4 text-center text-gray-800 w-full">
           Location
         </h2>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded w-full">
+            {error}
+          </div>
+        )}
+
         <div className="w-full flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2 px-2">
           <div className="relative flex items-center w-full md:w-auto">
             <div className="absolute left-3">
@@ -127,37 +199,40 @@ const Location = ({ onClose }) => {
                   <div className="relative flex flex-col md:flex-row items-center w-full md:w-auto gap-2">
                     <input
                       type="text"
-                      list="buildings"
+                      name="building"
                       placeholder="Building"
-                      className="w-full md:w-auto pl-10 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+                      value={newLocation.building}
+                      onChange={handleNewLocationChange}
+                      className="w-full md:w-auto pl-4 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
                       required
+                      disabled={saving}
                     />
-                    <datalist id="buildings">
-                      <option value="Building 1" />
-                      <option value="Building 2" />
-                      <option value="Building 3" />
-                    </datalist>
                     <input
                       type="text"
-                      list="rooms"
+                      name="room"
                       placeholder="Room"
-                      className="w-full md:w-auto pl-10 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+                      value={newLocation.room}
+                      onChange={handleNewLocationChange}
+                      className="w-full md:w-auto pl-4 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+                      required
+                      disabled={saving}
                     />
-                    <datalist id="rooms">
-                      <option value="Room 1" />
-                      <option value="Room 2" />
-                      <option value="Room 3" />
-                    </datalist>
                     <input
                       type="text"
+                      name="shelf"
                       placeholder="Shelf"
-                      className="w-full md:w-auto pl-10 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+                      value={newLocation.shelf}
+                      onChange={handleNewLocationChange}
+                      className="w-full md:w-auto pl-4 pr-4 py-2 text-gray-600 rounded-lg border border-gray-200 focus:outline-none focus:border-black focus:ring-1 focus:ring-black"
+                      required
+                      disabled={saving}
                     />
                     <button
-                      className="bg-primary-100 text-white px-4 py-2 rounded-lg hover:scale-105 transition-all duration-300"
+                      className="bg-primary-100 text-white px-4 py-2 rounded-lg hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={handleSave}
+                      disabled={saving}
                     >
-                      Add
+                      {saving ? "Adding..." : "Add"}
                     </button>
                   </div>
                 </div>
@@ -183,9 +258,9 @@ const Location = ({ onClose }) => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedRows.map((row, index) => (
+              {paginatedRows.map((location, index) => (
                 <tr
-                  key={index}
+                  key={location.id || index}
                   className={
                     index % 2 === 0
                       ? "hover:bg-zinc-200 transition-all duration-300"
@@ -198,50 +273,47 @@ const Location = ({ onClose }) => {
                   {columns.map((column) => (
                     <td
                       key={column.id}
-                      className="pl-4 py-2 whitespace-nowrap text-sm text-gray-700"
+                      className="px-4 py-2 whitespace-nowrap text-sm text-gray-700"
                     >
-                      {row[column.id]}
+                      {location[column.id] || "-"}
                     </td>
                   ))}
                 </tr>
               ))}
             </tbody>
           </table>
-          {/* Pagination Controls */}
-          <div className="flex items-end justify-end px-4 py-2 bg-white border-t border-gray-200 w-full">
-            <div className="flex items-center gap-2">
-              <span className="md:text-sm text-xs text-gray-700">
-                Rows per page:
-              </span>
-              <select
-                className="border border-gray-300 text-gray-600 rounded px-2 py-1 md:text-sm text-xs focus:outline-none"
-                value={rowsPerPage}
-                onChange={handleChangeRowsPerPage}
-              >
-                {[5, 10, 25].map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-              <button
-                className="px-2 py-1 md:text-sm text-xs text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                onClick={() => handleChangePage(page - 1)}
-                disabled={page === 0}
-              >
-                Previous
-              </button>
-              <span className="md:text-sm text-xs text-gray-700">
-                Page {page + 1} of {totalPages}
-              </span>
-              <button
-                className="px-2 py-1 md:text-sm text-xs  text-gray-500 hover:text-gray-700 disabled:opacity-50"
-                onClick={() => handleChangePage(page + 1)}
-                disabled={page >= totalPages - 1}
-              >
-                Next
-              </button>
-            </div>
+        </div>
+        <div className="flex items-center justify-between w-full mt-4">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-700">Rows per page:</span>
+            <select
+              value={rowsPerPage}
+              onChange={handleChangeRowsPerPage}
+              className="border border-gray-300 rounded px-2 py-1 text-sm"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+            </select>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handleChangePage(page - 1)}
+              disabled={page === 0}
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <span className="text-sm text-gray-700">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button
+              onClick={() => handleChangePage(page + 1)}
+              disabled={page >= totalPages - 1}
+              className="px-3 py-1 border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

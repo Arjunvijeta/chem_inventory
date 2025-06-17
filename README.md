@@ -1,150 +1,199 @@
 # Chemical Inventory Management System
 
-A modern web application for managing chemical inventory, built with React and FastAPI. This system allows users to search for chemicals, view their properties and quantities, and request chemicals through an intuitive user interface.
+A full-stack web application for managing chemical inventory with user authentication, chemical cataloging, location management, and order tracking.
 
 ## Features
 
-- 🔍 Chemical search functionality
-- 📊 Chemical property and quantity tracking
-- 📝 Chemical request management
-- 🔐 User authentication and authorization
-- 🎨 Modern, responsive UI built with React and Tailwind CSS
-- 🧪 Chemical structure visualization using Ketcher
-- 📱 Mobile-friendly design
+- **Chemical Catalogue Management**: Add, view, edit, and delete chemical containers
+- **Location Management**: Manage storage locations (building, room, shelf)
+- **User Management**: Admin interface for managing users and departments
+- **Order Tracking**: Track chemical requests and their status
+- **Authentication**: Secure login system with JWT tokens
+- **Search & Pagination**: Advanced search and pagination for all data tables
 
 ## Tech Stack
 
-### Frontend
-
-- React 18
-- React Router DOM
-- Tailwind CSS
-- Ketcher (for chemical structure visualization)
-- React Icons
-- Testing libraries (Jest, React Testing Library)
-
 ### Backend
 
-- FastAPI
-- SQLAlchemy (ORM)
-- PostgreSQL
-- JWT Authentication
-- Alembic (Database migrations)
-- Pydantic (Data validation)
+- **FastAPI**: Modern Python web framework
+- **SQLAlchemy**: ORM for database operations
+- **SQLite**: Database (can be easily changed to PostgreSQL/MySQL)
+- **JWT**: Authentication tokens
+- **Pydantic**: Data validation and serialization
 
-## Prerequisites
+### Frontend
 
-- Node.js (v14 or higher)
-- Python 3.8 or higher
-- PostgreSQL
+- **React**: UI framework
+- **Tailwind CSS**: Styling
+- **React Router**: Navigation
+- **React Icons**: Icon library
+
+## Setup Instructions
+
+### Prerequisites
+
+- Python 3.8+
+- Node.js 16+
 - npm or yarn
-
-## Installation
 
 ### Backend Setup
 
 1. Navigate to the backend directory:
 
-   ```bash
-   cd backend
-   ```
+```bash
+cd backend
+```
 
-2. Create a virtual environment:
+2. Create a virtual environment (optional but recommended):
 
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
 3. Install dependencies:
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-4. Create a `.env` file in the backend directory with the following variables:
+4. Run the backend server:
 
-   ```
-   DATABASE_URL=postgresql://username:password@localhost:5432/chem_inventory
-   SECRET_KEY=your-secret-key
-   ALGORITHM=HS256
-   ACCESS_TOKEN_EXPIRE_MINUTES=30
-   ```
+```bash
+python main.py
+```
 
-5. Run database migrations:
-
-   ```bash
-   alembic upgrade head
-   ```
-
-6. Start the backend server:
-   ```bash
-   uvicorn main:app --reload
-   ```
-
-The backend server will run on `http://localhost:8000`
+The backend will be available at `http://127.0.0.1:8000`
 
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
 
-   ```bash
-   cd frontend
-   ```
+```bash
+cd frontend
+```
 
 2. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-3. Create a `.env` file in the frontend directory:
+3. Start the development server:
 
-   ```
-   REACT_APP_API_URL=http://localhost:8000
-   ```
+```bash
+npm start
+```
 
-4. Start the development server:
-   ```bash
-   npm start
-   ```
+The frontend will be available at `http://localhost:3000`
 
-The frontend application will run on `http://localhost:3000`
+## API Endpoints
 
-## API Documentation
+### Authentication
 
-Once the backend server is running, you can access the interactive API documentation at:
+- `POST /auth/login` - User login
+- `POST /auth/register` - User registration
 
-- Swagger UI: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+### Chemical Catalogue
+
+- `GET /chemical-catalogue/` - Get all chemicals
+- `POST /chemical-catalogue/` - Create new chemical
+- `GET /chemical-catalogue/{id}` - Get specific chemical
+- `PUT /chemical-catalogue/{id}` - Update chemical
+- `DELETE /chemical-catalogue/{id}` - Delete chemical
+
+### Location
+
+- `GET /location/` - Get all locations
+- `POST /location/` - Create new location
+- `GET /location/{id}` - Get specific location
+- `PUT /location/{id}` - Update location
+- `DELETE /location/{id}` - Delete location
+
+### Users
+
+- `GET /users/` - Get all users
+- `POST /users/` - Create new user
+- `GET /users/{id}` - Get specific user
+- `PUT /users/{id}` - Update user
+- `DELETE /users/{id}` - Delete user
+
+### Departments
+
+- `GET /department/` - Get all departments
+- `POST /department/` - Create new department
+- `GET /department/{id}` - Get specific department
+- `PUT /department/{id}` - Update department
+- `DELETE /department/{id}` - Delete department
+
+### Orders
+
+- `GET /order/` - Get all orders
+- `POST /order/` - Create new order
+- `GET /order/{id}` - Get specific order
+- `PUT /order/{id}` - Update order
+- `DELETE /order/{id}` - Delete order
+
+## Database Schema
+
+The application uses the following main entities:
+
+- **Chemical_catalogue**: Chemical containers with properties like name, CAS number, quantity, location
+- **Location**: Storage locations with building, room, and shelf information
+- **User**: System users with roles and department associations
+- **Department**: Organizational departments
+- **Order**: Chemical requests with status tracking
+
+## Usage
+
+1. Start both backend and frontend servers
+2. Navigate to `http://localhost:3000`
+3. Login with your credentials
+4. Use the sidebar to access different features:
+   - **Add chemical container**: Add new chemicals to inventory
+   - **Location**: Manage storage locations
+   - **Requested chemicals**: View and manage chemical requests
+   - **Administrator**: Manage users and departments
 
 ## Development
 
-### Backend Development
+### Adding New Features
 
-- The backend follows a modular structure with separate routers for different functionalities
-- Database models are defined in `models.py`
-- API schemas are defined in `schemas.py`
-- Authentication logic is handled in the `auth` directory
+1. Create new API endpoints in the backend routers
+2. Add corresponding API functions in `frontend/src/services/api.js`
+3. Create or update React components as needed
+4. Update the main TableLayout component to include new features
 
-### Frontend Development
+### Database Changes
 
-- The frontend is built using React with a component-based architecture
-- Styling is done using Tailwind CSS
-- Chemical structure visualization is implemented using Ketcher
-- Routing is handled using React Router
+1. Update the models in `backend/models.py`
+2. Update the schemas in `backend/schemas.py`
+3. Create and run database migrations if needed
+
+## Security
+
+- JWT tokens are used for authentication
+- Passwords are hashed using bcrypt
+- CORS is configured to allow only specific origins
+- Input validation is handled by Pydantic schemas
 
 ## Contributing
 
 1. Fork the repository
-2. Create a new branch for your feature
+2. Create a feature branch
 3. Make your changes
-4. Submit a pull request
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## Support
 
 For support, please open an issue in the GitHub repository or contact the maintainers.
+
+Test account:
+
+User: string
+Password: string

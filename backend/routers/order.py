@@ -79,14 +79,14 @@ def update_order(
             raise HTTPException(status_code=404, detail="Chemical not found")
     
     # Verify contact user exists if being updated
-    if "contact" in update_data:
-        contact = db.query(models.User).filter(models.User.id == update_data["contact"]).first()
+    if "requested_by" in update_data:
+        contact = db.query(models.User).filter(models.User.id == update_data["requested_by"]).first()
         if not contact:
             raise HTTPException(status_code=404, detail="Contact user not found")
     
     # Verify handler user exists if being updated
-    if "handler" in update_data:
-        handler = db.query(models.User).filter(models.User.id == update_data["handler"]).first()
+    if "requested_to" in update_data:
+        handler = db.query(models.User).filter(models.User.id == update_data["requested_to"]).first()
         if not handler:
             raise HTTPException(status_code=404, detail="Handler user not found")
     

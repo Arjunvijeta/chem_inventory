@@ -2,9 +2,9 @@
 from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker
 from models import Base
-import os
 from dotenv import load_dotenv
 import logging
+import os
 
 load_dotenv()
 
@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 
 # Database configuration
-
-
-DATABASE_URL = "sqlite:///./data.db"
+# Use environment variable for database path, with fallback for development
+DATABASE_PATH = os.getenv("DATABASE_PATH", "./data.db")
+DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

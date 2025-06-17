@@ -17,6 +17,7 @@ class UserBase(BaseModel):
     email: str
     password: str
     department: str
+    contact_person: bool = False
     role: str
 
 class UserCreate(UserBase):
@@ -27,6 +28,7 @@ class UserUpdate(BaseModel):
     email: Optional[str] = None
     password: Optional[str] = None
     department: Optional[str] = None
+    contact_person: Optional[bool] = None
     role: Optional[str] = None
 
 class UserResponse(UserBase):
@@ -48,11 +50,29 @@ class PasswordResetByParent(BaseModel):
     user_id: int
     new_password: str
 
+# Department Schemas
+class DepartmentBase(BaseModel):
+    department_name: str
+
+class DepartmentCreate(DepartmentBase):
+    pass
+
+class DepartmentUpdate(BaseModel):
+    department_name: Optional[str] = None
+
+class DepartmentResponse(DepartmentBase):
+    id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 # Location Schemas
 class LocationBase(BaseModel):
     location_building: str
     location_room: str
-    location_self: str
+    location_storage: str
+    location_note: Optional[str] = None
 
 class LocationCreate(LocationBase):
     pass
@@ -60,7 +80,8 @@ class LocationCreate(LocationBase):
 class LocationUpdate(BaseModel):
     location_building: Optional[str] = None
     location_room: Optional[str] = None
-    location_self: Optional[str] = None
+    location_storage: Optional[str] = None
+    location_note: Optional[str] = None
 
 class LocationResponse(LocationBase):
     id: int
@@ -82,7 +103,7 @@ class ChemicalCatalogueBase(BaseModel):
     supplier: str
     location_building: str
     location_room: str
-    location_self: str
+    location_storage: str
     purchase_date: date
     expiry_date: date
     comment: Optional[str] = None
@@ -122,8 +143,8 @@ class ChemicalCatalogueResponse(ChemicalCatalogueBase):
 class OrderBase(BaseModel):
     chemical_id: int
     chemical_name: str
-    contact: int
-    handler: int
+    requested_by: str
+    requested_to: str
     comment: Optional[str] = None
     status: str = "pending"
 
@@ -133,8 +154,8 @@ class OrderCreate(OrderBase):
 class OrderUpdate(BaseModel):
     chemical_id: Optional[int] = None
     chemical_name: Optional[str] = None
-    contact: Optional[int] = None
-    handler: Optional[int] = None
+    requested_by: Optional[str] = None
+    requested_to: Optional[str] = None
     comment: Optional[str] = None
     status: Optional[str] = None
 

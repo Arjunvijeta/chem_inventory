@@ -32,6 +32,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
         email=user.email,
         password=hashed_password,
         department=user.department,
+        contact_person=user.contact_person,
         role=user.role
     )
     db.add(db_user)
@@ -45,6 +46,7 @@ async def login_for_access_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)
 ):
+    # Use form_data.username as the email since OAuth2PasswordRequestForm provides username field
     user = authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(
